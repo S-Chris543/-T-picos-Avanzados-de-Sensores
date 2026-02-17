@@ -1,5 +1,4 @@
 /*
-===========================================================
 Práctica 01. Sistema de Posicionamiento Global GPS:
 Adquisición de datos GPS a 1 Hz durante 15 minutos
   
@@ -15,7 +14,6 @@ a 15 minutos de muestreo a una frecuencia de 1 Hz(1 muestra por segundo).
 
 Una vez que se completan las 900 muestras, el programa imprime los arreglos en formato compatible 
 con MATLAB para facilitar su análisis estadístico y graficación posterior.
-
 */
 
 #include <Arduino.h>
@@ -113,3 +111,4 @@ void loop() {
     }
   }
 }
+
