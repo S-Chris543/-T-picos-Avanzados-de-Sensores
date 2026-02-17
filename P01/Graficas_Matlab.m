@@ -1,18 +1,3 @@
-/*
-Práctica 01. Sistema de Posicionamiento Global GPS: GEOCERCA
-
-  - Christian Emmanuel Castruita Alaniz: Desarrollo principal del código GPS y geocerca.
-  - Del Hoyo Gómez Karla Stephanie: Pruebas de funcionamiento y documentación.
-  - Pablo David Sánchez García: Apoyo en cálculos y optimización de la geocerca.
-
-  Descripción:
-El código procesa y analiza los datos de sensores GPS mediante la carga de múltiples conjuntos de datos; 
-tales son: exterior, salón (interior) y entre calles. Se extraen las variables de latitud, longitud y latitud
-realizando el cálculo preciso de lo detectado por el GPS a lo largo de 15 minutos, genera visualizaciones 
-que incluyen los mapas geográficos de satélite de trayectoria y gráficas de la variación de altitud por cada
-muestra recolectada. 
-*/
-
 % Archivos
 archivos = {'CampoAbierto.m..mat', 'EntreCalles.m..mat', 'Salon.mat'};
 nombres = {'Campo Abierto', 'Entre Calles', 'Salón'};
