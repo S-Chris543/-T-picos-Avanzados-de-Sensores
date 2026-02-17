@@ -1,5 +1,20 @@
-% Práctica 01. Sistema de Posicionamiento Global GPS: GEOCERCA
-% 
+%{
+Práctica 01. Sistema de Posicionamiento Global GPS:
+Adquisición de datos GPS a 1 Hz durante 15 minutos
+
+- Christian Emmanuel Castruita Alaniz: Desarrollo principal del código GPS y geocerca.
+- Del Hoyo Gómez Karla Stephanie: Pruebas de funcionamiento y documentación.
+- Pablo David Sánchez García: Apoyo en cálculos y optimización de la geocerca.
+
+El código de MATLAB analiza datos de sensores GPS mediante la carga de conjuntos de 
+datos de los siguientes entornos; exterior, salón y entre calles para extraer 
+variables de latitud longitud y altitud para realizar el cálculo preciso de la 
+distancia total que detectó el GPS y así, genera visualizaciones como mapas 
+geográficos de trayectoria satélite y gráficas de la variación de altitud por 
+cada muestra recolectada.
+%}
+
+% ------------------------------------------------------------------------------------------------
 
 % Archivos
 archivos = {'CampoAbierto.m..mat', 'EntreCalles.m..mat', 'Salon.mat'};
@@ -44,4 +59,5 @@ for i = 1:length(archivos)
     else
         warning('No encontré el archivo: %s', archivos{i});
     end
+end
 end
