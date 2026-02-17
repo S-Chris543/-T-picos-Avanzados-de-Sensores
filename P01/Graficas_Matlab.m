@@ -1,3 +1,6 @@
+% Práctica 01. Sistema de Posicionamiento Global GPS: GEOCERCA
+% 
+
 % Archivos
 archivos = {'CampoAbierto.m..mat', 'EntreCalles.m..mat', 'Salon.mat'};
 nombres = {'Campo Abierto', 'Entre Calles', 'Salón'};
