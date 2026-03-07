@@ -7,7 +7,7 @@
 
 
 % Descripción:
-% Este código nos permite graficar los valores obtenidos de las mediciones realizadas con el
+% Este código nos permite gráficar los valores obtenidos de las mediciones realizadas con el
 % objeto seleccioado, para verificar que la geometría obtenida concuerde con el objeto real
 
 clc
