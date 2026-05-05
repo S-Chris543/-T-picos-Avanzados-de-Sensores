@@ -1,0 +1,71 @@
+% Práctica 03. Acelerómetro y Giroscopio:
+% Clasificación en Vivo de Cara del Dado desde ESP32
+%
+% - Christian Emmanuel Castruita Alaniz
+% - Del Hoyo Gómez Karla Stephanie
+% - Pablo David Sánchez García
+%
+% Descripción:
+% Este script de MATLAB lee en tiempo real los valores de Pitch y Roll
+% enviados por el ESP32 a través del puerto serie. Cada par de valores
+% recibidos se normaliza al rango [-1, 1] y se pasa como entrada a una
+% red neuronal de dos capas cuyos pesos fueron entrenados previamente
+% con Train_Dado.m y almacenados en Weights_Dado.mat. La red clasifica
+% la orientación del dado en una de sus seis caras e imprime el resultado
+% en consola de forma continua hasta que el usuario interrumpe la ejecución.
+% Requiere: Weights_Dado.mat y la función ClasificarCara.m
+
+% Limpia el espacio de trabajo y la consola antes de iniciar
+clear; clc;
+
+% Carga los pesos y parámetros de la red neuronal entrenada
+% Variables esperadas: W1, b1, W2, b2, fhidden, foutput
+load Weights_Dado.mat
+
+% --- Parámetros de temporización y normalización ---
+ts       = 0.1;     % Período de muestreo en segundos (~10 Hz, igual que el ESP32)
+maxValue = 1023;    % Valor máximo del rango discretizado (10 bits)
+minValue = 0;       % Valor mínimo del rango discretizado
+
+% Abre la conexión serie con el ESP32
+% Ajustar el puerto COM según el dispositivo y sistema operativo
+arduino = serialport("COM8", 115200);
+
+% Pausa para permitir que el ESP32 complete su inicialización
+pause(4);
+
+disp('Clasificando en vivo (Ctrl+C para terminar)...');
+
+% Etiquetas de las seis caras del dado para la salida en consola
+nombres = {'CARA 1','CARA 2','CARA 3','CARA 4','CARA 5','CARA 6'};
+
+while true
+    tic;  % Inicia el cronómetro para controlar el período de muestreo
+
+    % Descarta datos residuales en el buffer para leer siempre la muestra más reciente
+    flush(arduino);
+
+    % Lee una línea del puerto serie y elimina espacios en blanco
+    data = strtrim(readline(arduino));
+
+    % Separa los dos valores enviados por el ESP32 (pitch, roll) separados por coma
+    valores = str2double(split(data, ","));
+
+    % Procesa solo si se recibieron exactamente dos valores válidos
+    if length(valores) == 2
+
+        % Normaliza al rango [-1, 1] requerido por la función de activación tansig
+        % pN = 2 * (x - min) / (max - min) - 1
+        pN = 2 * (valores - minValue) ./ (maxValue - minValue) - 1;
+
+        % Clasifica la cara del dado usando la red neuronal cargada
+        cara = ClasificarCara(pN, W1, b1, W2, b2, fhidden, foutput);
+
+        % Imprime los valores normalizados y la cara detectada
+        fprintf('  pitchN=%+.2f  rollN=%+.2f  -->  %s\n', ...
+                pN(1), pN(2), nombres{cara});
+    end
+
+    % Espera activa hasta completar el período de muestreo de 100 ms
+    while toc < ts; end
+end
