@@ -1,0 +1,65 @@
+/*
+  Práctica 06. Gas:
+  Monitor de concentración de gas y humo con sensor MQ-2.
+
+  Autores:
+  - Christian Emmanuel Castruita Alaniz: Desarrollo principal del código.
+  - Del Hoyo Gómez Karla Stephanie: Pruebas de funcionamiento y documentación.
+  - Pablo David Sánchez García: Apoyo en cálculos y optimización.
+
+  Descripción:
+  Este programa mide de forma continua la concentración de gases combustibles y humo
+  con un sensor MQ-2 y la expresa como un porcentaje del 0 al 100 %. La lectura
+  analógica cruda del sensor se reescala entre dos valores de referencia: el del aire
+  limpio (0 %) y el de una saturación fuerte (100 %), ambos ajustables según el
+  entorno. Según el porcentaje obtenido, el programa muestra en el monitor serial un
+  estado de aire limpio, precaución o alerta, actualizándose cada 1.5 segundos.
+*/
+
+const int pinMQ2 = A0;  // Pin analógico donde está conectado el sensor
+
+// Valores de calibración (ajustables según el entorno). Definen el rango de mapeo:
+const int AIRE_LIMPIO = 80;   // Lectura analógica típica en un cuarto ventilado (~0%)
+const int SATURACION = 900;   // Lectura analógica estimada ante una fuga fuerte (~100%)
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(pinMQ2, INPUT);
+
+  Serial.println("=========================================");
+  Serial.println("Estabilizando sensor MQ-2 (Espere...)");
+  Serial.println("=========================================");
+  // Los sensores MQ necesitan precalentarse para entregar lecturas estables.
+  delay(10000); // 10 segundos de espera inicial
+}
+
+void loop() {
+  // 1. Leer el valor analógico crudo (0 a 1023).
+  int valorCrudo = analogRead(pinMQ2);
+
+  // 2. Convertir la lectura a porcentaje (0%-100%).
+  // constrain() recorta el valor al rango de calibración para que map() no devuelva
+  // resultados fuera de 0-100 cuando la lectura cae por debajo o por encima del rango.
+  int valorLimitado = constrain(valorCrudo, AIRE_LIMPIO, SATURACION);
+  int porcentajeGas = map(valorLimitado, AIRE_LIMPIO, SATURACION, 0, 100);
+
+  // 3. Mostrar los resultados en el Monitor Serie.
+  Serial.print("Lectura Cruda: ");
+  Serial.print(valorCrudo);
+  Serial.print("  |  Concentración General: ");
+  Serial.print(porcentajeGas);
+  Serial.println("%");
+
+  // 4. Clasificación del nivel de concentración en tres estados de alerta.
+  if (porcentajeGas < 20) {
+    Serial.println("Estado: Aire Limpio / Normal");
+  }
+  else if (porcentajeGas >= 20 && porcentajeGas < 50) {
+    Serial.println("Estado: [PRECAUCIÓN] Presencia leve de gas o humo");
+  }
+  else {
+    Serial.println("Estado: [¡ALERTA!] Alta concentración de gas");
+  }
+
+  delay(1500); // Actualiza la lectura cada 1.5 segundos
+}
