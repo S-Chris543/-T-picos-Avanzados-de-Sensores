@@ -1,0 +1,68 @@
+/*
+  Práctica 07. Flujo:
+  Caracterización de un sensor de flujo de agua mediante conteo de pulsos.
+
+  Descripción:
+  Este programa mide el caudal de agua usando un sensor de flujo de efecto Hall
+  (tipo YF-S201) conectado a un Arduino. El sensor genera una señal de pulsos cuya
+  frecuencia es proporcional al caudal que circula por él. Cada pulso se detecta por
+  interrupción en el pin 2 (flanco de subida) y se acumula en un contador. Una vez por
+  segundo, el programa toma la cuenta de pulsos acumulada, la convierte a litros por
+  minuto dividiéndola entre el factor de calibración del sensor (7.5), reinicia el
+  contador y envía el resultado por el puerto serial.
+*/
+
+// Contador de pulsos del sensor. Es 'volatile' porque se modifica dentro de la
+// interrupción (ISR): esto obliga al compilador a leerla siempre desde memoria y no
+// desde una copia en registro, evitando que el loop use un valor desactualizado.
+volatile unsigned long pulseCount = 0;
+
+// Marca de tiempo de la última medición, usada para muestrear exactamente cada 1 s.
+unsigned long lastTime = 0;
+
+// Pin digital 2: en Arduino UNO es uno de los pines que admiten interrupción por hardware.
+const byte sensorPin = 2;
+
+// Rutina de interrupción (ISR): se ejecuta en cada flanco de subida del sensor.
+// Debe ser lo más corta posible; por eso aquí solo incrementa el contador.
+void countPulses() {
+  pulseCount++;
+}
+
+void setup() {
+  Serial.begin(9600);
+
+  // INPUT_PULLUP mantiene el pin en alto en reposo, evitando lecturas erráticas
+  // (ruido) cuando el sensor no está conmutando.
+  pinMode(sensorPin, INPUT_PULLUP);
+
+  // Asocia la interrupción del pin con el ISR 'countPulses', disparándola en cada
+  // flanco de subida (RISING); es decir, una vez por cada pulso del sensor.
+  attachInterrupt(digitalPinToInterrupt(sensorPin), countPulses, RISING);
+
+  Serial.println("--- Sistema de caracterización listo ---");
+}
+
+void loop() {
+  // Ejecuta el bloque una vez por segundo sin bloquear el programa (sin usar delay()).
+  if (millis() - lastTime >= 1000) {
+
+    // Se desactiva la interrupción para leer y reiniciar el contador de forma segura:
+    // si llegara un pulso justo entre la lectura y el reinicio, podría perderse o
+    // corromper la cuenta. Esto convierte la operación en una lectura "atómica".
+    detachInterrupt(digitalPinToInterrupt(sensorPin));
+
+    // Convierte los pulsos del último segundo a litros por minuto.
+    // 7.5 es el factor de calibración del sensor: frecuencia(Hz) = 7.5 x caudal(L/min).
+    unsigned long pulses = pulseCount / 7.5;
+    pulseCount = 0;
+
+    // Se vuelve a activar la interrupción para continuar contando pulsos.
+    attachInterrupt(digitalPinToInterrupt(sensorPin), countPulses, RISING);
+
+    lastTime = millis();
+
+    Serial.print("Pulsos por segundo (L/Min): ");
+    Serial.println(pulses);
+  }
+}
