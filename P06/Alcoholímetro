@@ -1,0 +1,81 @@
+/*
+  Práctica 06. Gas:
+  Alcoholímetro con sensor MQ-3 (concentración de alcohol en el aliento).
+
+  Autores:
+  - Christian Emmanuel Castruita Alaniz: Desarrollo principal del código.
+  - Del Hoyo Gómez Karla Stephanie: Pruebas de funcionamiento y documentación.
+  - Pablo David Sánchez García: Apoyo en cálculos y optimización.
+
+  Descripción:
+  Este programa estima la concentración de alcohol en el aire espirado usando un
+  sensor MQ-3, sensible a vapores de etanol. Al iniciar se auto-calibra promediando
+  varias lecturas del aire limpio para fijar su "cero" real. Después, en cada ciclo
+  resta ese valor base a la lectura cruda y convierte el resultado a miligramos de
+  alcohol por litro de aire (mg/L) mediante un factor de aproximación. Según el valor
+  obtenido, muestra un estado de sobrio, precaución o alerta. La lectura se actualiza
+  cada 1.5 segundos.
+
+  Nota: es un instrumento didáctico, no un equipo calibrado con validez legal.
+*/
+
+const int pinMQ3 = A0;
+int aireLimpio = 150; // Valor base inicial; se sobreescribe con la calibración en setup()
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(pinMQ3, INPUT);
+
+  Serial.println("=============================================");
+  Serial.println("     INICIANDO ALCOHOLÍMETRO (mg/L)          ");
+  Serial.println("=============================================");
+  Serial.println("Deje el sensor en aire limpio para calibrar...");
+
+  // Auto-calibración: promedia 5 lecturas (una por segundo) del aire limpio para
+  // obtener el "cero" real del sensor en las condiciones actuales del ambiente.
+  long suma = 0;
+  for(int i = 0; i < 5; i++) {
+    suma += analogRead(pinMQ3);
+    delay(1000);
+  }
+  aireLimpio = suma / 5;
+
+  Serial.print("Calibración exitosa. Valor base actual: ");
+  Serial.println(aireLimpio);
+  Serial.println("---------------------------------------------");
+}
+
+void loop() {
+  // 1. Leer el valor analógico crudo (0 - 1023).
+  int valorCrudo = analogRead(pinMQ3);
+
+  // 2. Lectura neta: se descuenta el aire limpio para aislar solo el aporte del
+  // alcohol. Se acota a 0 para evitar valores negativos por debajo del valor base.
+  int lecturaNeta = valorCrudo - aireLimpio;
+  if (lecturaNeta < 0) lecturaNeta = 0;
+
+  // 3. Conversión a mg/L. El factor 0.0017 es una aproximación empírica que vincula
+  // la lectura neta con la concentración de alcohol en el aliento (no es exacto).
+  float mgL_Aire = lecturaNeta * 0.0017;
+
+  // 4. Mostrar resultados en el Monitor Serie.
+  Serial.print("Lectura Cruda: ");
+  Serial.print(valorCrudo);
+  Serial.print("  |  Alcohol en Aire: ");
+  Serial.print(mgL_Aire, 3); // 3 decimales
+  Serial.println(" mg/L");
+
+  // 5. Diagnóstico según rangos comunes de alcohol en aire espirado (mg/L).
+  if (mgL_Aire < 0.05) {
+    Serial.println("Estado: Sobrio / Aire Limpio");
+  }
+  else if (mgL_Aire >= 0.05 && mgL_Aire < 0.25) {
+    Serial.println("Estado: [PRECAUCIÓN] Presencia moderada de alcohol");
+  }
+  else {
+    Serial.println("Estado: [¡ALERTA!] Límite legal superado (Posible positivo)");
+  }
+
+  Serial.println("---------------------------------------------");
+  delay(1500); // Actualiza la lectura cada 1.5 segundos
+}
