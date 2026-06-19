@@ -1,0 +1,95 @@
+/*
+  Práctica 06. Gas:
+  Detector de actividad física a partir del aliento con sensor MQ-2.
+
+  Autores:
+  - Christian Emmanuel Castruita Alaniz: Desarrollo principal del código.
+  - Del Hoyo Gómez Karla Stephanie: Pruebas de funcionamiento y documentación.
+  - Pablo David Sánchez García: Apoyo en cálculos y optimización.
+
+  Descripción:
+  Este programa estima el nivel de actividad física de una persona analizando los
+  gases presentes en su aliento con un sensor MQ-2. Al iniciar, calibra el aire de la
+  habitación promediando varias lecturas para fijar un valor base. Después, en cada
+  prueba la persona sopla sobre el sensor durante 5 segundos mientras el programa
+  registra la lectura máxima. La diferencia entre ese máximo y el aire base se compara
+  contra umbrales empíricos para clasificar el resultado en reposo, actividad
+  leve/moderada o actividad intensa. El ciclo se repite automáticamente tras un
+  periodo de limpieza del sensor.
+*/
+
+// Pin analógico al que está conectada la salida del sensor MQ-2.
+const int pinMQ2 = A0;
+
+// Valor base del aire de la habitación; se calcula en setup() durante la calibración.
+int aireAmbiente = 0;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(pinMQ2, INPUT);
+
+  Serial.println("=================================================");
+  Serial.println("    DETECTOR DE ACTIVIDAD FÍSICA (MQ-2)         ");
+  Serial.println("=================================================");
+  Serial.println("Estabilizando sensor en el ambiente... No sople.");
+
+  // Calibración: toma 5 lecturas (una por segundo) y las promedia para obtener un
+  // valor de referencia del aire limpio, sin la influencia del aliento.
+  long suma = 0;
+  for(int i = 0; i < 5; i++) {
+    suma += analogRead(pinMQ2);
+    delay(1000);
+  }
+  aireAmbiente = suma / 5;
+
+  Serial.print("Ambiente calibrado. Valor base: ");
+  Serial.println(aireAmbiente);
+  Serial.println("\n>>> LISTO. Sople al sensor de forma constante durante 5 segundos...");
+}
+
+void loop() {
+  int maximoDetectado = 0;
+
+  // Ventana de medición de 5 segundos (50 muestras x 100 ms). Se conserva solo el
+  // valor más alto, que corresponde al pico del soplido de la persona.
+  for(int i = 0; i < 50; i++) {
+    int lecturaActual = analogRead(pinMQ2);
+    if(lecturaActual > maximoDetectado) {
+      maximoDetectado = lecturaActual;
+    }
+    delay(100); // Muestreo rápido para no perder el pico
+  }
+
+  // Diferencia entre el pico del soplido y el aire base. Se acota a 0 para que el
+  // ruido o las variaciones del ambiente no produzcan un incremento negativo.
+  int incremento = maximoDetectado - aireAmbiente;
+  if(incremento < 0) incremento = 0;
+
+  // --- MOSTRAR RESULTADOS DEL TEST ---
+  Serial.println("\n=================================================");
+  Serial.print("Resultado del soplido (Máximo): "); Serial.println(maximoDetectado);
+  Serial.print("Incremento sobre el aire base: "); Serial.println(incremento);
+  Serial.print("DIAGNÓSTICO: ");
+
+  // Umbrales de clasificación, determinados de forma empírica durante las pruebas;
+  // conviene reajustarlos según el sensor y las condiciones del laboratorio.
+  if (incremento < 15) {
+    Serial.println("REPOSO / SIN ACTIVIDAD FÍSICA DETECTADA");
+    Serial.println("Exhalación normal. El metabolismo está en niveles base.");
+  }
+  else if (incremento >= 15 && incremento < 45) {
+    Serial.println("ACTIVIDAD FÍSICA LEVE A MODERADA");
+    Serial.println("Se detecta un ligero aumento de gases metabólicos en el aliento.");
+  }
+  else {
+    Serial.println("¡ACTIVIDAD FÍSICA INTENSA DETECTADA!");
+    Serial.println("Metabolismo acelerado. Alta exhalación de compuestos volátiles / sudor.");
+  }
+  Serial.println("=================================================");
+
+  // Pausa para que el sensor se ventile y regrese a su valor base antes de la
+  // siguiente prueba; evita que residuos del soplido anterior alteren la medición.
+  Serial.println("\nEsperando 10 segundos para limpiar el sensor antes del siguiente test...");
+  delay(10000);
+  Serial.println("\n>>> ¡LISTO PARA OTRA PRUEBA! Sople de nuevo...");
+}
