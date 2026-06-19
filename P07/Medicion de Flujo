@@ -2,6 +2,11 @@
   Práctica 07. Flujo:
   Caracterización de un sensor de flujo de agua mediante conteo de pulsos.
 
+  Autores:
+  - Christian Emmanuel Castruita Alaniz: Desarrollo principal del código.
+  - Del Hoyo Gómez Karla Stephanie: Pruebas de funcionamiento y documentación.
+  - Pablo David Sánchez García: Apoyo en cálculos y optimización.
+
   Descripción:
   Este programa mide el caudal de agua usando un sensor de flujo de efecto Hall
   (tipo YF-S201) conectado a un Arduino. El sensor genera una señal de pulsos cuya
